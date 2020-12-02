@@ -2,30 +2,19 @@
   (:require [clojure.java.io :as io]))
 
 (def input
-  (->> (io/reader (io/resource "input_02.txt"))
-       (line-seq)
-       (mapcat (partial re-seq #"(\d+)-(\d+)\s([a-z]):\s([a-z]+)"))
-       (map (fn [[_ from to ch pass]] [(Long/parseLong from)
-                                       (Long/parseLong to)
-                                       (first ch)
-                                       pass]))))
+  (->> (line-seq (io/reader (io/resource "input_02.txt")))
+       (map (partial re-find #"(\d+)-(\d+)\s(.):\s(.+)"))
+       (map (fn [[_ min max ch pass]]
+              [(Long/parseLong min) (Long/parseLong max) (first ch) pass]))))
 
 ;; part 1
-(defn valid-pass? [[from to ch pass]]
-  (let [cnt (reduce #(if (= %2 ch) (inc %1) %1) 0 pass)]
-    (<= from cnt to)))
+(defn valid-pass? [[min max ch pass]]
+  (<= min (count (filter #(= % ch) pass)) max))
 
-(->> input
-     (filter valid-pass?)
-     count)
+(count (filter valid-pass? input)) ;; 586
 
 ;; part 2
-(->> input
-     (filter (fn [[pos1 pos2 ch pass]]
-               (let [a (nth pass (dec pos1))
-                     b (nth pass (dec pos2))]
-                 (cond
-                   (and (= a ch) (not= b ch)) true
-                   (and (= b ch) (not= a ch)) true
-                   :else false))))
-     count)
+(defn valid-pass2? [[min max ch pass]]
+  (->> [min max] (map #(= (nth pass (dec %)) ch)) (apply not=)))
+
+(count (filter valid-pass2? input)) ;; 352

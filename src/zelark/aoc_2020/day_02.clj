@@ -1,6 +1,9 @@
 (ns zelark.aoc-2020.day-02
   (:require [clojure.java.io :as io]))
 
+;; --- Day 2: Password Philosophy ---
+;; https://adventofcode.com/2020/day/2
+
 (def input
   (->> (line-seq (io/reader (io/resource "input_02.txt")))
        (map (partial re-find #"(\d+)-(\d+)\s(.):\s(.+)"))

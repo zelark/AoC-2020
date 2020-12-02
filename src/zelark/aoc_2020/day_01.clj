@@ -1,6 +1,9 @@
 (ns zelark.aoc-2020.day-01
   (:require [clojure.java.io :as io]))
 
+;; --- Day 1: Report Repair ---
+;; https://adventofcode.com/2020/day/1
+
 (def input
   (->> (io/reader (io/resource "input_01.txt"))
        line-seq

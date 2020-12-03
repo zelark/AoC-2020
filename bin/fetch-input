@@ -1,0 +1,10 @@
+#!/bin/bash
+
+[[ -z "$AOC_SESSION" ]] && exit -1
+
+OUTFILE="resources/input_$(printf "%02d" "${1}").txt"
+
+curl "https://adventofcode.com/2020/day/${1}/input"\
+     --progress-bar\
+     -H "Cookie: session=${AOC_SESSION}"\
+     > $OUTFILE

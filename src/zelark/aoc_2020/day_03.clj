@@ -1,6 +1,9 @@
 (ns zelark.aoc-2020.day-03
   (:require [clojure.java.io :as io]))
 
+;; --- Day 3: Toboggan Trajectory ---
+;; https://adventofcode.com/2020/day/3
+
 (def input
   (->> (io/reader (io/resource "input_03.txt"))
        (line-seq)))

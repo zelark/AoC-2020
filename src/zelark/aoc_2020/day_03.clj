@@ -5,12 +5,14 @@
   (->> (io/reader (io/resource "input_03.txt"))
        (line-seq)))
 
+(defn tree? [row x]
+  (= (nth row (mod x (count row))) \#))
+
 (defn check-slope [input [right down]]
   (first
-   (reduce (fn [[n x] line]
-             (if (= (nth (cycle line) x) \#)
-               [(inc n) (+ x right)]
-               [n (+ x right)]))
+   (reduce (fn [[n x] row]
+             [(cond-> n (tree? row x) inc)
+              (+ x right)])
            [0 right]
            (rest (take-nth down input)))))
 

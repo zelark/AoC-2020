@@ -1,50 +1,51 @@
 (ns zelark.aoc-2020.day-04
   (:require [clojure.java.io :as io]
-            [clojure.string :as str]
-            [clojure.set :as set]))
+            [clojure.string :as str]))
 
 ;; --- Day 4: Passport Processing ---
 ;; https://adventofcode.com/2020/day/4
+
 (def input (slurp (io/resource "input_04.txt")))
 
-(def required-fields #{"byr" "iyr" "eyr" "hgt" "hcl" "ecl" "pid" "cid"})
+(defn parse-entry [entry]
+  (into {} (map #(str/split % #":") (str/split entry #"\s"))))
 
 (defn parse-input [input]
   (->> (str/split input #"\n\n")
-       (map #(str/split % #"[\s\n]"))
-       (map (partial map #(str/split % #":")))))
-
-(defn has-required-fileds? [rec]
-  (let [diff (set/difference required-fields (set (map first rec)))]
-    (or (empty? diff)
-        (= diff #{"cid"}))))
+       (map parse-entry)))
 
 ;; part 1
-(count (filter has-required-fileds? (parse-input input))) ;; 208
+(def required-fields ["byr" "iyr" "eyr" "hgt" "hcl" "ecl" "pid"])
 
-(def rules
-  {"byr" [#(re-find #"^\d{4}$" %) #(<= 1920 (Long/parseLong %) 2002)]
-   "iyr" [#(re-find #"^\d{4}$" %) #(<= 2010 (Long/parseLong %) 2020)]
-   "eyr" [#(re-find #"^\d{4}$" %) #(<= 2020 (Long/parseLong %) 2030)]
-   "hgt" [#(re-find #"^(\d+)(in|cm)$" %)
-          (fn [x]
-           (let [[_ height unit] (re-find #"(\d+)(in|cm)" x)
-                 height          (Long/parseLong height)]
-             (if (= unit "cm")
-               (<= 150 height 193)
-               (<= 59  height 76))))]
-   "hcl" [#(re-find #"^#[0-9a-f]{6}$" %)]
-   "ecl" [#(re-find #"^(amb|blu|brn|gry|grn|hzl|oth)$" %)]
-   "pid" [#(re-find #"^\d{9}$" %)]
-   "cid" [identity]})
+(defn has-required-fileds? [rec]
+  (every? (partial contains? rec) required-fields))
+
+(->> (parse-input input) (filter has-required-fileds?) count) ;; 208
+
+(defn in-range? [min max num]
+  (and (re-matches #"\d+" num)
+       (<= min (Long/parseLong num) max)))
 
 ;; part 2
+(def rules
+  {:byr (partial in-range? 1920 2002)
+   :iyr (partial in-range? 2010 2020)
+   :eyr (partial in-range? 2020 2030)
+   :hgt (fn [x]
+           (let [[_ height unit] (re-find #"^(\d+)(in|cm)$" x)]
+             (case unit
+               "cm" (in-range? 150 193 height)
+               "in" (in-range? 59 76 height)
+               false)))
+   :hcl (partial re-find #"^#[0-9a-f]{6}$")
+   :pid (partial re-find #"^\d{9}$")
+   :ecl #{"amb" "blu" "brn" "gry" "grn" "hzl" "oth"}
+   :cid (constantly true)})
+
 (defn valid? [rec]
-  (let [validate (fn [[field value]]
-                   ((apply every-pred (rules field)) value))]
-   (every? validate rec)))
+  (every? #((rules (-> % key keyword)) (val %)) rec))
 
 (->> (parse-input input)
      (filter has-required-fileds?)
      (filter valid?)
-     (count)) ;; 167
+     count) ;; 167

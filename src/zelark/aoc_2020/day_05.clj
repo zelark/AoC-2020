@@ -7,19 +7,13 @@
 
 (def input (str/split-lines (slurp (io/resource "input_05.txt"))))
 
-(defn decode [lo hi s]
-  (if-let [c (first s)]
-    (case c
-      (\F \L) (recur lo (+ lo (quot (- hi lo) 2)) (next s))
-      (\B \R) (recur (+ lo (inc (quot (- hi lo) 2))) hi (next s)))
-    lo))
-
-(def decode-row (partial decode 0 127))
-(def decode-col (partial decode 0 7))
+(defn- decode [code]
+  (let [b (->> code (map {\F 0 \B 1 \R 1 \L 0}) (apply str))]
+    (Long/parseLong b 2)))
 
 (defn decode-seat [code]
   (let [[row col] (split-at 7 code)]
-    (+ (* (decode-row row) 8) (decode-col col))))
+    (+ (* (decode row) 8) (decode col))))
 
 ;; part 1
 (apply max (map decode-seat input)) ; 878

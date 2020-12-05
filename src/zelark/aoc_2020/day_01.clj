@@ -1,13 +1,14 @@
 (ns zelark.aoc-2020.day-01
-  (:require [clojure.java.io :as io]))
+  (:require [clojure.java.io :as io]
+            [clojure.string :as str]))
 
 ;; --- Day 1: Report Repair ---
 ;; https://adventofcode.com/2020/day/1
 
-(def input
-  (->> (io/reader (io/resource "input_01.txt"))
-       line-seq
-       (map #(Long/parseLong %))))
+(def input (slurp (io/resource "input_01.txt")))
+
+(defn parse-input [input]
+  (->> input (str/split-lines) (map #(Long/parseLong %))))
 
 (defn part1 [numbers target]
   (first
@@ -22,5 +23,5 @@
          c            b-rest                 :when (== (+ a b c) target)]
      (* a b c))))
 
-(part1 input 2020)
-(part2 input 2020)
+(part1 (parse-input input) 2020) ; 440979
+(part2 (parse-input input) 2020) ; 82498112

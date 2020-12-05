@@ -20,7 +20,7 @@
 (defn has-required-fileds? [rec]
   (every? (partial contains? rec) required-fields))
 
-(->> (parse-input input) (filter has-required-fileds?) count) ;; 208
+(->> (parse-input input) (filter has-required-fileds?) count) ; 208
 
 (defn in-range? [min max num]
   (and (re-matches #"\d+" num)
@@ -48,4 +48,4 @@
 (->> (parse-input input)
      (filter has-required-fileds?)
      (filter valid?)
-     count) ;; 167
+     count) ; 167

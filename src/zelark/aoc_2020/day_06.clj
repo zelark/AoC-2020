@@ -13,14 +13,14 @@
        (map str/split-lines)
        (map (partial map set))))
 
+(defn solve [join-fn input]
+  (->> (parse-input input)
+       (map (partial apply join-fn))
+       (map count)
+       (apply +)))
+
 ;; part 1
-(->> (parse-input input)
-     (map (partial apply set/union))
-     (map count)
-     (apply +)) ; 6735
+(solve set/union input) ; 6735
 
 ;; part 2
-(->> (parse-input input)
-     (map (partial apply set/intersection))
-     (map count)
-     (apply +)) ; 3221
+(solve set/intersection input) ; 3221

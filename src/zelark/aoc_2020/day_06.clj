@@ -10,7 +10,7 @@
 
 (defn parse-input [input]
   (->> (str/split input #"\R\R")
-       (map (partial re-seq #"[a-z]+"))
+       (map str/split-lines)
        (map (partial map set))))
 
 ;; part 1

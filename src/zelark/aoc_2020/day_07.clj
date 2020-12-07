@@ -23,10 +23,7 @@
 (count (find-outer-bags bags "shiny gold")) ; 103
 
 ;; part 2
-(defn inner-bags [bags bag ^long mult]
-  (if-let [content (seq (get bags bag))]
-    (+ (apply + (map #(* % mult) (vals content)))
-       (reduce (fn [acc [b n]] (+ acc (inner-bags bags b (* n mult)))) 0 content))
-    0))
+(defn count-bags [bags [bag n]]
+  (* n (apply + 1 (map #(count-bags bags %) (get bags bag)))))
 
-(inner-bags bags "shiny gold" 1) ; 1469
+(dec (count-bags bags ["shiny gold" 1])) ; 1469

@@ -11,19 +11,15 @@
   (->> (str/split-lines input)
        (map #(Long/parseLong %))))
 
-(defn combinations [coll]
-  (for [[x & x-rest] (iterate next coll) :while x
-        y            x-rest]
-    [x y]))
+(defn invalid [window num]
+  (when (not-any? #(window (- num %)) window)
+    num))
 
-(defn valid? [window num]
-  (boolean (some #(== num (apply + %)) (combinations window))))
-
-(defn part1 [numbers size]
-  (some identity
-        (map (fn [window num] (when-not (valid? window num) num))
-             (partition size 1 numbers)
-             (drop size numbers))))
+(defn part1 [numbers preamble]
+  (->> (map vector
+            (map set (partition preamble 1 numbers))
+            (drop preamble numbers))
+       (some #(apply invalid %))))
 
 (part1 (parse-input input) 25) ; 41682220
 

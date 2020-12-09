@@ -11,28 +11,25 @@
   (->> (str/split-lines input)
        (map #(Long/parseLong %))))
 
-(defn invalid [window num]
-  (when (not-any? #(window (- num %)) window)
-    num))
+(defn invalid [numbers]
+  (let [[num window] ((juxt last (comp set butlast)) numbers)]
+    (when (not-any? #(window (- num %)) window)
+      num)))
 
-(defn part1 [numbers preamble]
-  (->> (map vector
-            (map set (partition preamble 1 numbers))
-            (drop preamble numbers))
-       (some #(apply invalid %))))
+;; part 1
+(->> (parse-input input)
+     (partition 26 1) ; 25 numbers + 1
+     (some invalid))  ; 41682220
 
-(part1 (parse-input input) 25) ; 41682220
+;; part 2
+(defn find-encryption-weakness [target numbers]
+  (let [sums (take-while #(<= % target) (reductions + numbers))]
+    (when (== target (last sums))
+      (->> (take (count sums) numbers)
+           (apply (juxt min max))
+           (apply +)))))
 
-(defn part2 [numbers target]
-  (some identity
-        (for [xs (iterate next numbers) :while xs]
-          (reduce (fn [acc y]
-                    (let [sum (+ acc y)
-                          rng (take-while (partial not= y) xs)]
-                      (cond
-                        (== target sum) (reduced (+ (apply min rng) (apply max rng)))
-                        (<  target sum) (reduced nil)
-                        :else           sum)))
-                  xs))))
-
-(part2 (parse-input input) 41682220) ; 5388976
+(->> (parse-input input)
+     (iterate next)
+     (take-while seq)
+     (some (partial find-encryption-weakness 41682220))) ; 5388976

@@ -11,26 +11,21 @@
   (let [adapters (->> (str/split-lines input)
                       (map #(Long/parseLong %))
                       (apply sorted-set))]
-    (conj adapters 0 (+ (last adapters) 3))))
+    (vec (conj adapters 0 (+ (last adapters) 3)))))
 
 (def adapters (parse-input input))
 
-(defn find-next [adapter adapters]
-  (seq (filter adapters (map + [1 2 3] (repeat 3 adapter)))))
-
 ;; part 1
-(->> adapters
-     (keep #(when-first [found (find-next % adapters)] (- found %)))
-     (frequencies)
-     (vals)
+(->> (frequencies (map - (rest adapters) adapters))
+     vals
      (apply *)) ; 2400
 
 ;; part 2
-(def count-arranges
-  (memoize
-   (fn [start]
-     (if-let [found (find-next start adapters)]
-       (apply + (dec (count found)) (map count-arranges found))
-       0))))
-
-(inc (count-arranges 0)) ; 338510590509056
+(-> (reduce (fn [cnts n]
+              (let [cnt (->> (map + (repeat n) [1 2 3])
+                             (keep cnts)
+                             (apply +))]
+                (assoc cnts n cnt)))
+            (sorted-map (peek adapters) 1)
+            (rest (rseq adapters)))
+    first val) ; 338510590509056

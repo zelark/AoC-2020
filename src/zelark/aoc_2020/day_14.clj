@@ -14,62 +14,49 @@
   (->> (str/split-lines input)
        (map #(re-matches #"(?:(mask) = ([X10]+)|(mem)\[(\d+)\] = (\d+))" %))
        (map #(remove nil? %))
-       (map (fn [[_ cmd a b ]] (case cmd "mask" [:mask (parse-mask a)] "mem" [:mem (Long/parseLong a) (Long/parseLong b)])))))
+       (map (fn [[_ cmd a b]]
+              (case cmd
+                "mask" [:mask (parse-mask a)]
+                "mem"  [:mem (Long/parseLong a) (Long/parseLong b)])))))
 
-(def demo-input "mask = XXXXXXXXXXXXXXXXXXXXXXXXXXXXX1XXXX0X
-mem[8] = 11
-mem[7] = 101
-mem[8] = 0")
+(defn run-program [re-mem code]
+  (loop [commands code mask {} mem {}]
+    (if-let [[cmd a b] (first commands)]
+      (case cmd
+        :mask (recur (next commands) a mem)
+        :mem  (recur (next commands) mask (re-mem mem mask a b)))
+      (apply + (vals mem)))))
 
-(parse-input demo-input)
-(parse-input input)
-
-(defn apply-mask [mask number]
+;; part 1
+(defn apply-mask-v1 [mask number]
   (reduce-kv (fn [num idx bit]
                (case bit
                  \0 (bit-clear num idx)
                  \1 (bit-set   num idx)
                  \X num))
-           number mask))
+             number mask))
 
-(defn run-program [code]
-  (loop [commands code mask {} mem {}]
-    (if-let [[cmd a b] (first commands)]
-      (case cmd
-        :mask (recur (next commands) a mem)
-        :mem  (recur (next commands) mask (assoc mem a (apply-mask mask b))))
-      mem)))
+(defn mem-v1 [mem mask address value]
+  (assoc mem address (apply-mask-v1 mask value)))
 
-(apply + (vals (run-program (parse-input input)))) ; 13476250121721
+(run-program mem-v1 (parse-input input)) ; 13476250121721
 
 ;; part 2
-(def demo-input-2 "mask = 000000000000000000000000000000X1001X
-mem[42] = 100
-mask = 00000000000000000000000000000000X0XX
-mem[26] = 1")
-
-(defn apply-floating [floating a b]
-  (reduce (fn [x [nf nm]]
-            (if (bit-test b nm)
-              (bit-set x nf)
-              (bit-clear x nf))) a (map vector floating (range))))
+(defn apply-floating [floating number mask]
+  (reduce (fn [num [i1 i2]]
+            (if (bit-test mask i1) (bit-set num i2) (bit-clear num i2)))
+          number
+          (map-indexed vector floating)))
 
 (defn apply-mask-v2 [mask number]
   (let [floating (keys (filter #(-> % val (= \X)) mask))
-        num (reduce-kv (fn [num idx bit]
-                 (case bit
-                   (\0 \X) num
-                   \1 (bit-set num idx)))
-               number mask)]
-    (map (partial apply-floating floating) (repeat num) (range 0 (apply * (repeat (count floating) 2))))))
+        ones     (keys (filter #(-> % val (= \1)) mask))
+        number'  (reduce #(bit-set %1 %2) number ones)]
+    (map (partial apply-floating floating)
+         (repeat number')
+         (range 0 (bit-shift-left 1 (count floating))))))
 
-(defn run-program-v2 [code]
-  (loop [commands code mask {} mem {}]
-    (if-let [[cmd a b] (first commands)]
-      (case cmd
-        :mask (recur (next commands) a mem)
-        :mem  (recur (next commands) mask (reduce #(assoc %1 %2 b) mem (apply-mask-v2 mask a))))
-      mem)))
+(defn mem-v2 [mem mask address value]
+  (reduce #(assoc %1 %2 value) mem (apply-mask-v2 mask address)))
 
-(apply + (vals (run-program-v2 (parse-input input)))) ; 4463708436768
-
+(run-program mem-v2 (parse-input input)) ; 4463708436768

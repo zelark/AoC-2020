@@ -8,15 +8,16 @@
 (def input (slurp (io/resource "input_14.txt")))
 
 (defn parse-mask [mask]
-  (->> (zipmap (range) (reverse mask))))
+  {:and      (Long/parseLong (str/escape mask {\1 \0, \X \1}) 2)
+   :or       (Long/parseLong (str/escape mask {\X 0}) 2)
+   :floating (keep-indexed #(when (= %2 \X) (- 35 %1)) mask)}) ; always 36 bits
 
 (defn parse-input [input]
   (->> (str/split-lines input)
-       (map #(re-matches #"(?:(mask) = ([X10]+)|(mem)\[(\d+)\] = (\d+))" %))
-       (map #(remove nil? %))
+       (map #(re-matches #"(mask|mem)(?:\[(\d+)\])? = ([X01]+|\d+)" %))
        (map (fn [[_ cmd a b]]
               (case cmd
-                "mask" [:mask (parse-mask a)]
+                "mask" [:mask (parse-mask b)]
                 "mem"  [:mem (Long/parseLong a) (Long/parseLong b)])))))
 
 (defn run-program [re-mem code]
@@ -29,12 +30,8 @@
 
 ;; part 1
 (defn apply-mask-v1 [mask number]
-  (reduce-kv (fn [num idx bit]
-               (case bit
-                 \0 (bit-clear num idx)
-                 \1 (bit-set   num idx)
-                 \X num))
-             number mask))
+  (bit-or (bit-and number (mask :and))
+          (mask :or)))
 
 (defn mem-v1 [mem mask address value]
   (assoc mem address (apply-mask-v1 mask value)))
@@ -42,19 +39,17 @@
 (run-program mem-v1 (parse-input input)) ; 13476250121721
 
 ;; part 2
-(defn apply-floating [floating number mask]
+(defn apply-floating [floating fmask number]
   (reduce (fn [num [i1 i2]]
-            (if (bit-test mask i1) (bit-set num i2) (bit-clear num i2)))
+            (if (bit-test fmask i1) (bit-set num i2) (bit-clear num i2)))
           number
           (map-indexed vector floating)))
 
-(defn apply-mask-v2 [mask number]
-  (let [floating (keys (filter #(-> % val (= \X)) mask))
-        ones     (keys (filter #(-> % val (= \1)) mask))
-        number'  (reduce #(bit-set %1 %2) number ones)]
-    (map (partial apply-floating floating)
-         (repeat number')
-         (range 0 (bit-shift-left 1 (count floating))))))
+(defn apply-mask-v2 [{:keys [floating] :as mask} number]
+  (->> (bit-or number (mask :or))
+       (repeat)
+       (map (partial apply-floating floating)
+            (range (bit-shift-left 1 (count floating))))))
 
 (defn mem-v2 [mem mask address value]
   (reduce #(assoc %1 %2 value) mem (apply-mask-v2 mask address)))

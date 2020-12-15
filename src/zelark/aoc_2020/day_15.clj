@@ -35,7 +35,7 @@
         _      (doseq [[^int i num] (map-indexed vector numbers)]
                  (aset spoken num (inc i)))]
     (loop [turn   (int (count numbers))
-           number (peek numbers)]
+           number (int (peek numbers))]
       (if (== turn limit)
         number
         (let [last-spoken (aget spoken number)
@@ -44,4 +44,4 @@
                  (cond->> last-spoken
                    (not= last-spoken 0) (unchecked-subtract-int turn))))))))
 
-(solve-fast (parse-input input) 30000000) ; ~800 ms
+(solve-fast (parse-input input) 30000000) ; ~700 ms

@@ -23,12 +23,13 @@
                        (frequencies))}))
 
 (defn narrow [coll]
-  (loop [[[k v] & xs] (sort-by (comp count val) coll)
+  (loop [[[k v] & xs] (sort-by (comp count second) coll)
          result {}]
-    (if (== (count result) (count coll))
+    (if (nil? k)
       result
-      (recur (sort-by (comp count val) xs)
-             (assoc result (first (remove result v)) k)))))
+      (recur (->> (map (fn [[kn vn]] [kn (disj vn (first v))]) xs)
+                  (sort-by (comp count second)))
+             (assoc result (first v) k)))))
 
 ;; part 1
 (let [{:keys [allergens ingrediends]} (parse-input input)]

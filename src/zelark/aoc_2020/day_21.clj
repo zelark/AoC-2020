@@ -18,18 +18,16 @@
   (let [foods (->> (str/split-lines input)
                    (map parse-item))]
     {:allergens   (reduce (partial merge-with set/intersection) foods)
-     :ingrediends (->> (map (comp val first) foods)
-                       (reduce into [])
-                       (frequencies))}))
+     :ingrediends (frequencies (mapcat #(-> % first val) foods))}))
 
 (defn narrow [coll]
   (loop [[[k v] & xs] (sort-by (comp count second) coll)
-         result {}]
+         result (sorted-map)]
     (if (nil? k)
       result
       (recur (->> (map (fn [[kn vn]] [kn (disj vn (first v))]) xs)
                   (sort-by (comp count second)))
-             (assoc result (first v) k)))))
+             (assoc result k (first v))))))
 
 ;; part 1
 (let [{:keys [allergens ingrediends]} (parse-input input)]
@@ -41,6 +39,5 @@
 ;; part 2
 (let [{:keys [allergens]} (parse-input input)]
   (->> (narrow allergens)
-       (sort-by val)
-       (map first)
+       (map second)
        (str/join ","))) ; fllssz,kgbzf,zcdcdf,pzmg,kpsdtv,fvvrc,dqbjj,qpxhfp

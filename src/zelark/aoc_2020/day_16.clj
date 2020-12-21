@@ -7,27 +7,22 @@
 
 (def input (slurp (io/resource "input_16.txt")))
 
-(defn parse-long [n]
-  (Long/parseLong n))
-
-(defn parse-ticket [ticket]
-  (->> (str/split ticket #",")
-       (map parse-long)))
+(defn parse-longs [s]
+  (->> (re-seq #"\d+" s)
+       (mapv #(Long/parseLong %))))
 
 (defn parse-input [input]
- (let [rules (->> (re-seq #"([a-z ]+): (\d+)-(\d+) or (\d+)-(\d+)" input)
-                  (map (fn [[_ field a b c d]]
-                         [field [(parse-long a) (parse-long b)] [(parse-long c) (parse-long d)]])))
-       tikets (->> (re-find #"nearby tickets:\n([\d,\n]+)" input)
-                   (second)
-                   (str/split-lines)
-                   (map parse-ticket))
-       my-ticket (->> (re-find #"your ticket:\n([\d,]+)" input)
-                      (second)
-                      (parse-ticket))]
+ (let [[rules my-ticket tikets] (str/split input #"\R\R")
+       rules (->> (str/split-lines rules)
+                  (map #(str/split % #":"))
+                  (map (fn [[field ranges]] [field (partition 2 (parse-longs ranges))])))
+       tikets (->> (str/split-lines tikets)
+                   (rest)
+                   (map parse-longs))
+       my-ticket (parse-longs my-ticket)]
    {:rules rules :tickets tikets :my-ticket my-ticket}))
 
-(defn valid? [[_ [a b] [c d]] number]
+(defn valid? [[_ [[a b] [c d]]] number]
   (or (<= a number b)
       (<= c number d)))
 
@@ -36,30 +31,30 @@
 
 ;; part 1
 (let [{:keys [rules tickets]} (parse-input input)]
-  (->> (mapcat #(find-invalid rules %) tickets)
+  (->> (flatten tickets)
+       (remove (fn [n] (some #(valid? % n) rules)))
        (apply +))) ; 20013
 
 ;; part 2
 (defn find-fields [rules field]
   (->> (filter (fn [rule] (every? #(valid? rule %) field)) rules)
-       (map first)))
+       (map first)
+       (set)))
 
-(defn clear-fields [fields]
-  (let [n (count fields)
-        singles (fn [fields] (reduce #(if (== (count %2) 1) (conj %1 (first %2)) %1) #{} fields))]
-    (loop [fields fields
-           found  (singles fields)]
-      (if (== (count found) n)
-        (map first fields)
-        (let [fields' (map (fn [fs] (if (== (count fs) 1) fs (remove found fs))) fields)]
-          (recur fields' (singles fields')))))))
+(defn narrow [coll]
+  (loop [[[k v] & xs] (sort-by (comp count second) coll)
+         result {}]
+    (if (nil? k)
+      result
+      (recur (->> (map (fn [[kn vn]] [kn (disj vn (first v))]) xs)
+                  (sort-by (comp count second)))
+             (assoc result (first v) k)))))
 
 (let [{:keys [rules my-ticket tickets]} (parse-input input)]
   (->> (remove #(seq (find-invalid rules %)) tickets)
        (apply map vector)
-       (map #(find-fields rules %))
-       (clear-fields)
-       ((fn [fields] (zipmap fields my-ticket)))
-       (filter (fn [[k _]] (str/starts-with? k "departure")))
-       (vals)
+       (map-indexed #(-> [%1 (find-fields rules %2)]))
+       (narrow)
+       (filter (fn [[field]] (str/starts-with? field "departure")))
+       (map (fn [[_ idx]] (my-ticket idx)))
        (apply *))) ; 5977293343129

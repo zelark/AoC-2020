@@ -15,10 +15,12 @@
      (zipmap allergens (repeat ingredients))))
 
 (defn parse-input [input]
-  (let [food (->> (str/split-lines input)
-                  (map parse-item))]
-    {:allergens   (reduce (partial merge-with set/intersection) food)
-     :ingrediends (->> (map (comp val first ) food) (reduce into []) frequencies)}))
+  (let [foods (->> (str/split-lines input)
+                   (map parse-item))]
+    {:allergens   (reduce (partial merge-with set/intersection) foods)
+     :ingrediends (->> (map (comp val first) foods)
+                       (reduce into [])
+                       (frequencies))}))
 
 (defn narrow [coll]
   (loop [[[k v] & xs] (sort-by (comp count val) coll)
@@ -30,7 +32,8 @@
 
 ;; part 1
 (let [{:keys [allergens ingrediends]} (parse-input input)]
-  (->> (reduce #(apply dissoc %1 %2) ingrediends (vals allergens))
+  (->> (vals allergens)
+       (reduce (partial apply dissoc) ingrediends)
        (vals)
        (apply +))) ; 1885
 

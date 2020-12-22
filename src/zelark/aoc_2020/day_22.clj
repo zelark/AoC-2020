@@ -20,8 +20,8 @@
     [(parse-deck deck1) (parse-deck deck2)]))
 
 (defn score [{deck :deck}]
-  (->> (reverse deck)
-       (map * (rest (range)))
+  (->> (iterate dec (count deck))
+       (map * deck)
        (apply +)))
 
 ;; part 1

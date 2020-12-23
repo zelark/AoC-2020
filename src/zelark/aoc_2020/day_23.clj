@@ -12,30 +12,28 @@
 (defprotocol ICircleNode
   (value    [this])
   (get-next [this])
+  (set-next [this node])
   (insert   [this node])
   (insert-n [this start end])
   (remove-n [this n]))
 
-(defrecord CircleNode [value next]
+(deftype CircleNode [value ^:volatile-mutable next]
   ICircleNode
   (value    [_] value)
-  (get-next [_] (deref next))
+  (get-next [_] next)
+  (set-next [this node] (set! next node) this)
   (insert [this node]
-          (dosync (ref-set (:next node) (get-next this))
-                  (ref-set (:next this) node)))
+          (set-next node next)
+          (set-next this node))
   (insert-n [this start end]
-            (dosync (ref-set (:next end) (get-next this))
-                    (ref-set (:next this) start)))
+            (set-next end next)
+            (set-next this start))
   (remove-n [this n]
-            (dosync (ref-set (:next this) (first (drop (inc n) (iterate get-next this)))))))
-
-(defmethod print-method CircleNode [^CircleNode object ^java.io.Writer writer]
-  (.append writer (format "[%s]" (value object))))
+            (set-next this (first (drop (inc n) (iterate get-next this))))))
 
 (defn circle-node [value]
-  (let [node (CircleNode. value (ref nil))
-        _    (dosync (ref-set (:next node) node))]
-    node))
+  (let [node (CircleNode. value nil)]
+    (set-next node node)))
 
 (defn build-cups [labels]
   (first (reduce (fn [[acc prev] label]

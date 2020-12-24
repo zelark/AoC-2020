@@ -16,12 +16,12 @@
           (for [dy [-1 0 1] dx (if (zero? dy) [2 -2] [-1 1])]
             (fn [[x y]] [(+ x dx) (+ y dy)]))))
 
-(defn go-to-tile [path]
+(defn path->tile [path]
   (reduce #((directions %2) %1) [0 0] path))
 
 ;; part 1
 (def black-tiles (->> (parse-input input)
-                      (map go-to-tile)
+                      (map path->tile)
                       (reduce (fn [bs t] (if (bs t) (disj bs t) (conj bs t))) #{})))
 
 (count black-tiles) ; 427

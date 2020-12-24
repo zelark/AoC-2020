@@ -14,32 +14,25 @@
 (def directions
   (zipmap ["nw" "ne" "e" "w" "sw" "se"]
           (for [dy [-1 0 1] dx (if (zero? dy) [2 -2] [-1 1])]
-            [dx dy])))
+            (fn [[x y]] [(+ x dx) (+ y dy)]))))
 
-(defn go-to-tile [from path]
-  (->> (map directions path)
-       (reduce (partial mapv +) from)))
+(defn go-to-tile [path]
+  (reduce #((directions %2) %1) [0 0] path))
 
 ;; part 1
 (def black-tiles (->> (parse-input input)
-                      (map (partial go-to-tile [0 0]))
-                      (frequencies)
-                      (keep (fn [[loc n]] (when (= n 1) loc)))
-                      (set)))
+                      (map go-to-tile)
+                      (reduce (fn [bs t] (if (bs t) (disj bs t) (conj bs t))) #{})))
 
 (count black-tiles) ; 427
 
 ;; part 2
-(defn neighbours [[x y]]
-  (for [dy [-1 0 1] dx (if (zero? dy) [2 -2] [-1 1])]
-    [(+ x dx) (+ y dy)]))
+(defn neighbours [tile]
+  (map #(% tile) (vals directions)))
 
-(defn step [black-tiles]
-  (set (for [[loc n] (frequencies (mapcat neighbours black-tiles))
-             :when (or (= n 2) (and (<= 1 n 2) (black-tiles loc)))]
-        loc)))
+(defn step [tiles]
+  (set (for [[tile n] (frequencies (mapcat neighbours tiles))
+             :when (or (= n 2) (and (<= 1 n 2) (tiles tile)))]
+        tile)))
 
-(->> (iterate step black-tiles)
-     (drop 100)
-     (first)
-     (count)) ; 3837
+(->> (iterate step black-tiles) (drop 100) first count) ; 3837

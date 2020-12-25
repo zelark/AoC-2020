@@ -23,8 +23,6 @@
        (drop loop-size)
        first))
 
-(let [public-keys (parse-input input)]
-  (->> (map find-loop-size public-keys)
-       (map vector (rseq public-keys))
-       (apply min-key second)
-       (apply find-secret-key))) ; 12181021
+(let [[card-key door-key] (parse-input input)]
+  (->> (find-loop-size card-key)
+       (find-secret-key door-key))) ; 12181021

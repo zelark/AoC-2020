@@ -11,18 +11,19 @@
   (->> (str/split-lines input)
        (mapv #(Long/parseLong %))))
 
-(defn secret-loop [^long subject-number]
-  (iterate #(rem (* ^long % subject-number) 20201227) subject-number))
+(defn transform [^long subject-number]
+  (iterate #(rem (* ^long % subject-number) 20201227) 1))
 
 (defn find-loop-size [^long public-key]
   (some (fn [[^long n ^long key]] (when (== key public-key) n))
-        (map-indexed vector (secret-loop 7))))
+        (map-indexed vector (transform 7))))
 
-(defn find-secret-key [public-key loop-size]
-  (->> (secret-loop public-key)
+(defn find-encryption-key [public-key loop-size]
+  (->> (transform public-key)
        (drop loop-size)
-       first))
+       (first)))
 
-(let [[card-key door-key] (parse-input input)]
-  (->> (find-loop-size card-key)
-       (find-secret-key door-key))) ; 12181021
+;; part 1
+(let [[card-pubkey door-pubkey] (parse-input input)]
+  (->> (find-loop-size card-pubkey)
+       (find-encryption-key door-pubkey))) ; 12181021

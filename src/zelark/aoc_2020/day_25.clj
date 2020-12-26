@@ -11,19 +11,19 @@
   (->> (str/split-lines input)
        (mapv #(Long/parseLong %))))
 
+(def ^:const module 20201227)
+
 (defn transform [^long subject-number]
-  (iterate #(rem (* ^long % subject-number) 20201227) 1))
+  (iterate #(mod (* ^long % subject-number) module) 1))
 
 (defn find-loop-size [^long public-key]
-  (some (fn [[^long n ^long key]] (when (== key public-key) n))
-        (map-indexed vector (transform 7))))
+  (count (take-while #(not= ^long % public-key) (transform 7))))
 
-(defn find-encryption-key [public-key loop-size]
-  (->> (transform public-key)
-       (drop loop-size)
-       (first)))
+(defn mod-pow [b e m]
+  (.modPow (biginteger b) (biginteger e) (biginteger m)))
 
 ;; part 1
-(let [[card-pubkey door-pubkey] (parse-input input)]
-  (->> (find-loop-size card-pubkey)
-       (find-encryption-key door-pubkey))) ; 12181021
+(let [[card-pubkey door-pubkey] (parse-input input)
+      loop-size (find-loop-size card-pubkey)]
+    (mod-pow door-pubkey loop-size module)) ; 12181021
+
